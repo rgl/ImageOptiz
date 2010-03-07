@@ -35,8 +35,8 @@
             this.originalSizeColumnHeader = new System.Windows.Forms.ColumnHeader();
             this.optimizedSizeColumnHeader = new System.Windows.Forms.ColumnHeader();
             this.differenceSizeColumnHeader = new System.Windows.Forms.ColumnHeader();
+            this.percentageOptimizedColumnHeader = new System.Windows.Forms.ColumnHeader();
             this.helpLabel = new System.Windows.Forms.Label();
-            this.percentageOfOriginalColumnHeader = new System.Windows.Forms.ColumnHeader();
             this.SuspendLayout();
             // 
             // listView
@@ -51,7 +51,7 @@
             this.originalSizeColumnHeader,
             this.optimizedSizeColumnHeader,
             this.differenceSizeColumnHeader,
-            this.percentageOfOriginalColumnHeader});
+            this.percentageOptimizedColumnHeader});
             this.listView.FullRowSelect = true;
             this.listView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.listView.HideSelection = false;
@@ -91,6 +91,12 @@
             this.differenceSizeColumnHeader.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.differenceSizeColumnHeader.Width = 80;
             // 
+            // percentageOptimizedColumnHeader
+            // 
+            this.percentageOptimizedColumnHeader.Text = "% Optimized";
+            this.percentageOptimizedColumnHeader.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.percentageOptimizedColumnHeader.Width = 80;
+            // 
             // helpLabel
             // 
             this.helpLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
@@ -100,12 +106,6 @@
             this.helpLabel.Size = new System.Drawing.Size(262, 13);
             this.helpLabel.TabIndex = 2;
             this.helpLabel.Text = "To optimize images, drag&&drop them into this window";
-            // 
-            // percentageOfOriginalColumnHeader
-            // 
-            this.percentageOfOriginalColumnHeader.Text = "% Original";
-            this.percentageOfOriginalColumnHeader.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.percentageOfOriginalColumnHeader.Width = 80;
             // 
             // MainForm
             // 
@@ -137,7 +137,7 @@
         private System.Windows.Forms.ColumnHeader optimizedSizeColumnHeader;
         private System.Windows.Forms.Label helpLabel;
         private System.Windows.Forms.ColumnHeader differenceSizeColumnHeader;
-        private System.Windows.Forms.ColumnHeader percentageOfOriginalColumnHeader;
+        private System.Windows.Forms.ColumnHeader percentageOptimizedColumnHeader;
     }
 }
 

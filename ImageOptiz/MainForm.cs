@@ -173,7 +173,7 @@ namespace ImageOptiz
                 var optimizedFileLength = fileInfo.Length;
                 listViewItem.SubItems.Add(string.Format("{0}", optimizedFileLength)); // TODO format the number
                 listViewItem.SubItems.Add(string.Format("{0}", optimizedFileLength - originalFileLength)); // TODO format the number
-                listViewItem.SubItems.Add(string.Format("{0:#.##}", (optimizedFileLength / (double)originalFileLength) * 100)); // TODO format the number
+                listViewItem.SubItems.Add(string.Format("{0:#.##}", 100 - (optimizedFileLength / (double)originalFileLength) * 100)); // TODO format the number
             }
         }
 
