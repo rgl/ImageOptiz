@@ -3,20 +3,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Windows.Forms;
 
 namespace ImageOptiz
 {
     public partial class MainForm : Form
     {
-        private static readonly string[] ValidExtensions = new[]
-        {
-            ".png",
-            ".jpg",
-            ".jpeg",
-        };
-
         public MainForm()
         {
             InitializeComponent();
@@ -143,7 +135,7 @@ namespace ImageOptiz
         {
             Trace.WriteLine(string.Format("QueueFile {0}", fileName));
 
-            // TODO do this in background... using the manager.
+            // TODO do this in background... using some kind of manager.
 
             if (Directory.Exists(fileName))
             {
@@ -154,16 +146,14 @@ namespace ImageOptiz
                 // TODO queue the file...
                 var fileInfo = new FileInfo(fileName);
 
-                if (!ValidExtensions.Contains(fileInfo.Extension.ToLower()))
+                if (!ImageOptimizer.ValidExtensions.Contains(fileInfo.Extension.ToLower()))
                     return;
-
-                // TODO filter the file by extension.
 
                 var originalFileLength = fileInfo.Length;
 
                 var listViewItem = new ListViewItem(string.Empty);
                 listViewItem.SubItems.Add(fileInfo.Name);
-                listViewItem.SubItems.Add(string.Format("{0}", originalFileLength)); // TODO format the number
+                listViewItem.SubItems.Add(string.Format("{0}", originalFileLength)); // TODO format the number, eg. 2345 into 2.345
 
                 listView.Items.Add(listViewItem);
 
@@ -171,163 +161,15 @@ namespace ImageOptiz
 
                 fileInfo.Refresh();
                 var optimizedFileLength = fileInfo.Length;
-                listViewItem.SubItems.Add(string.Format("{0}", optimizedFileLength)); // TODO format the number
-                listViewItem.SubItems.Add(string.Format("{0}", optimizedFileLength - originalFileLength)); // TODO format the number
-                listViewItem.SubItems.Add(string.Format("{0:#.##}", 100 - (optimizedFileLength / (double)originalFileLength) * 100)); // TODO format the number
+                listViewItem.SubItems.Add(string.Format("{0}", optimizedFileLength)); // TODO format the number, eg. 2345 into 2.345
+                listViewItem.SubItems.Add(string.Format("{0}", optimizedFileLength - originalFileLength)); // TODO format the number, eg. 2345 into 2.345
+                listViewItem.SubItems.Add(string.Format("{0:#.##}", 100 - (optimizedFileLength / (double)originalFileLength) * 100));
             }
         }
 
         private void OptimizeImage(FileInfo fileInfo)
         {
-            // TODO catch exceptions, and flag the image path has failed (with the error as tooltip).
-            switch (fileInfo.Extension.ToLower())
-            {
-                case ".png":
-                    RunPngOut(fileInfo);
-                    break;
-                case ".jpg":
-                case ".jpeg":
-                    RunJpegTran(fileInfo);
-                    break;
-            }
-        }
-
-        private ToolResult RunPngOut(FileInfo fileInfo)
-        {
-            // NB: do not run pngout with the -q argument (we want to output to the user).
-            return RunTool("pngout", "-y", fileInfo.FullName);
-        }
-
-        private ToolResult RunJpegTran(FileInfo fileInfo)
-        {
-            var temporaryFileInfo = CreateTemporaryFile(fileInfo);
-            var toolResult = RunTool("jpegtran", "-verbose", "-copy", "none", "-optimize", fileInfo.FullName, temporaryFileInfo.FullName);
-            temporaryFileInfo.Refresh();
-            if (toolResult.ExitCode == 0 && temporaryFileInfo.Exists && temporaryFileInfo.Length > 0 && fileInfo.Length > temporaryFileInfo.Length)
-            {
-                File.Delete(fileInfo.FullName);
-                File.Move(temporaryFileInfo.FullName, fileInfo.FullName);
-            }
-            else
-            {
-                File.Delete(temporaryFileInfo.FullName);
-            }
-            return toolResult;
-        }
-
-        private static FileInfo CreateTemporaryFile(FileInfo fileInfo)
-        {
-            FileInfo temporaryFileInfo;
-            do
-            {
-                var guid = Guid.NewGuid();
-                var temporaryFilePath = Path.Combine(fileInfo.DirectoryName, string.Format("{0}.tmp{1}", guid, fileInfo.Extension));
-                temporaryFileInfo = new FileInfo(temporaryFilePath);
-            }
-            while (temporaryFileInfo.Exists);
-            return temporaryFileInfo;
-        }
-
-        private class ToolResult
-        {
-            public int ExitCode { get; set; }
-            public string StandardOutput { get; set; }
-            public string StandardError { get; set; }
-        }
-
-        private ToolResult RunTool(string tool, params string[] arguments)
-        {
-            var toolPath = Path.Combine(Path.Combine(Application.StartupPath, "tools"), string.Format("{0}.exe", tool));
-            using (
-                var p = new Process
-                {
-                    StartInfo =
-                    {
-                        FileName = EscapeProcessArgument(toolPath),
-                        Arguments = EscapeProcessArguments(arguments),
-                        RedirectStandardInput = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    }
-                }
-            )
-            {
-                var standardOutput = new StringBuilder();
-                var standardError = new StringBuilder();
-
-                p.OutputDataReceived += (sendingProcess, e) => standardOutput.AppendLine(e.Data);
-                p.ErrorDataReceived += (sendingProcess, e) => standardError.AppendLine(e.Data);
-
-                if (!p.Start())
-                {
-                    throw new ApplicationException("Ops, failed to launch pngout");
-                }
-
-                p.BeginOutputReadLine();
-                p.BeginErrorReadLine();
-
-                p.WaitForExit();
-
-                return new ToolResult {
-                    ExitCode = p.ExitCode,
-                    StandardOutput = standardOutput.ToString(),
-                    StandardError = standardError.ToString()
-                };
-            }
-        }
-
-        private static string EscapeProcessArguments(string[] arguments)
-        {
-            var sb = new StringBuilder();
-            foreach (var argument in arguments)
-            {
-                if (sb.Length > 0)
-                    sb.Append(' ');
-                EscapeProcessArgument(argument, sb);
-            }
-            return sb.ToString();
-        }
-
-        private static string EscapeProcessArgument(string argument)
-        {
-            var sb = new StringBuilder();
-            EscapeProcessArgument(argument, sb);
-            return sb.ToString();
-        }
-
-        private static void EscapeProcessArgument(string argument, StringBuilder sb)
-        {
-            // Normally, an Windows application (.NET applications too) parses
-            // their command line using the CommandLineToArgvW function. Which has
-            // some peculiar rules.
-            // See http://msdn.microsoft.com/en-us/library/bb776391(VS.85).aspx
-
-            // TODO how about backslashes? there seems to be a weird interaction
-            //      between backslahses and double quotes...
-            // TODO do test cases of this! even launch a second process that
-            //      only dumps its arguments.
-
-            if (argument.Contains('"'))
-            {
-                sb.Append('"');
-                // escape single double quotes with another double quote.
-                sb.Append(argument.Replace("\"", "\"\""));
-                sb.Append('"');
-            }
-            else if (argument.Contains(' ')) // AND it does NOT contain double quotes! (those were catched in the previous test)
-            {
-                sb.Append('"');
-                sb.Append(argument);
-                sb.Append('"');
-            }
-            else
-            {
-                sb.Append(argument);
-            }
-
-            // TODO what about null/empty arguments?
+            ImageOptimizer.Optimize(fileInfo);
         }
     }
 }
